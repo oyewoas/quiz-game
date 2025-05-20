@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useQuizContext } from "../context/QuizContext";
 import { questions } from "../data/questions";
 

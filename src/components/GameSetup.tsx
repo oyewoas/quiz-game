@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useQuizContext } from "../context/QuizContext";
-
 
 const categories = [
   { id: "general", name: "General Knowledge" },
