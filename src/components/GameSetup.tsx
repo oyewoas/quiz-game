@@ -11,8 +11,8 @@ const categories = [
 
 const difficulties = [
   { id: "easy", name: "Easy", timeLimit: 30 },
-  { id: "medium", name: "Medium", timeLimit: 20 },
-  { id: "hard", name: "Hard", timeLimit: 15 },
+  { id: "medium", name: "Medium", timeLimit: 45 },
+  { id: "hard", name: "Hard", timeLimit: 60 },
 ];
 
 export default function GameSetup() {
@@ -64,7 +64,7 @@ export default function GameSetup() {
                   className={`p-4 rounded-lg border-2 transition-all ${
                     selectedCategory === category.id
                       ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                      : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
+                      : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50 text-gray-700"
                   }`}
                 >
                   {category.name}
@@ -86,7 +86,7 @@ export default function GameSetup() {
                   className={`p-4 rounded-lg border-2 transition-all ${
                     selectedDifficulty === difficulty.id
                       ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                      : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
+                      : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50 text-gray-700"
                   }`}
                 >
                   <div className="font-medium">{difficulty.name}</div>

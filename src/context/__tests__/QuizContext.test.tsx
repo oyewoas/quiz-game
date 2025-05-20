@@ -1,4 +1,4 @@
-import { render, act } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 import { QuizProvider, useQuizContext } from "../QuizContext";
 import { getQuestions } from "../../data/questions";
 
@@ -8,54 +8,6 @@ jest.mock("../../data/questions", () => ({
   getAllQuestions: jest.fn(),
 }));
 
-// Test component that uses the context
-const TestComponent = () => {
-  const { state, dispatch } = useQuizContext();
-  return (
-    <div>
-      <div data-testid="score">{state.score}</div>
-      <div data-testid="current-index">{state.currentQuestionIndex}</div>
-      <div data-testid="game-config">
-        {state.gameConfig ? "configured" : "not-configured"}
-      </div>
-      <button
-        data-testid="set-config"
-        onClick={() =>
-          dispatch({
-            type: "SET_GAME_CONFIG",
-            payload: { category: "general", difficulty: "easy" },
-          })
-        }
-      >
-        Set Config
-      </button>
-      <button
-        data-testid="submit-answer"
-        onClick={() =>
-          dispatch({
-            type: "SUBMIT_ANSWER",
-            payload: "test-answer",
-          })
-        }
-      >
-        Submit Answer
-      </button>
-      <button
-        data-testid="next-question"
-        onClick={() => dispatch({ type: "NEXT_QUESTION" })}
-      >
-        Next Question
-      </button>
-      <button
-        data-testid="reset-quiz"
-        onClick={() => dispatch({ type: "RESET_QUIZ" })}
-      >
-        Reset Quiz
-      </button>
-    </div>
-  );
-};
-
 describe("QuizContext", () => {
   beforeEach(() => {
     // Reset mocks before each test
@@ -63,15 +15,13 @@ describe("QuizContext", () => {
   });
 
   it("should initialize with default state", () => {
-    const { getByTestId } = render(
-      <QuizProvider>
-        <TestComponent />
-      </QuizProvider>
-    );
+    const { result } = renderHook(() => useQuizContext(), {
+      wrapper: QuizProvider,
+    });
 
-    expect(getByTestId("score").textContent).toBe("0");
-    expect(getByTestId("current-index").textContent).toBe("0");
-    expect(getByTestId("game-config").textContent).toBe("not-configured");
+    expect(result.current.state.score).toBe(0);
+    expect(result.current.state.currentQuestionIndex).toBe(0);
+    expect(result.current.state.gameConfig).toBeNull();
   });
 
   it("should set game configuration correctly", () => {
@@ -89,17 +39,21 @@ describe("QuizContext", () => {
 
     (getQuestions as jest.Mock).mockReturnValue(mockQuestions);
 
-    const { getByTestId } = render(
-      <QuizProvider>
-        <TestComponent />
-      </QuizProvider>
-    );
-
-    act(() => {
-      getByTestId("set-config").click();
+    const { result } = renderHook(() => useQuizContext(), {
+      wrapper: QuizProvider,
     });
 
-    expect(getByTestId("game-config").textContent).toBe("configured");
+    act(() => {
+      result.current.dispatch({
+        type: "SET_GAME_CONFIG",
+        payload: { category: "general", difficulty: "easy" },
+      });
+    });
+
+    expect(result.current.state.gameConfig).toEqual({
+      category: "general",
+      difficulty: "easy",
+    });
     expect(getQuestions).toHaveBeenCalledWith("general", "easy");
   });
 
@@ -118,23 +72,37 @@ describe("QuizContext", () => {
 
     (getQuestions as jest.Mock).mockReturnValue(mockQuestions);
 
-    const { getByTestId } = render(
-      <QuizProvider>
-        <TestComponent />
-      </QuizProvider>
-    );
+    const { result } = renderHook(() => useQuizContext(), {
+      wrapper: QuizProvider,
+    });
 
     // Set game config first
     act(() => {
-      getByTestId("set-config").click();
+      result.current.dispatch({
+        type: "SET_GAME_CONFIG",
+        payload: { category: "general", difficulty: "easy" },
+      });
+    });
+
+    // Select answer first
+    act(() => {
+      result.current.dispatch({
+        type: "SELECT_OPTION",
+        payload: "A",
+      });
     });
 
     // Submit correct answer
     act(() => {
-      getByTestId("submit-answer").click();
+      result.current.dispatch({
+        type: "SUBMIT_ANSWER",
+      });
+      result.current.dispatch({
+        type: "RESET_QUESTION",
+      });
     });
 
-    expect(getByTestId("score").textContent).toBe("1");
+    expect(result.current.state.score).toBe(1);
   });
 
   it("should handle next question correctly", () => {
@@ -161,23 +129,41 @@ describe("QuizContext", () => {
 
     (getQuestions as jest.Mock).mockReturnValue(mockQuestions);
 
-    const { getByTestId } = render(
-      <QuizProvider>
-        <TestComponent />
-      </QuizProvider>
-    );
+    const { result } = renderHook(() => useQuizContext(), {
+      wrapper: QuizProvider,
+    });
 
     // Set game config first
     act(() => {
-      getByTestId("set-config").click();
+      result.current.dispatch({
+        type: "SET_GAME_CONFIG",
+        payload: { category: "general", difficulty: "easy" },
+      });
+    });
+
+    // Select answer first
+    act(() => {
+      result.current.dispatch({
+        type: "SELECT_OPTION",
+        payload: "A",
+      });
+    });
+
+    // Submit an answer first to ensure we can move to next question
+    act(() => {
+      result.current.dispatch({
+        type: "SUBMIT_ANSWER",
+      });
     });
 
     // Move to next question
     act(() => {
-      getByTestId("next-question").click();
+      result.current.dispatch({
+        type: "RESET_QUESTION"
+      });
     });
 
-    expect(getByTestId("current-index").textContent).toBe("1");
+    expect(result.current.state.currentQuestionIndex).toBe(1);
   });
 
   it("should reset quiz correctly", () => {
@@ -195,25 +181,34 @@ describe("QuizContext", () => {
 
     (getQuestions as jest.Mock).mockReturnValue(mockQuestions);
 
-    const { getByTestId } = render(
-      <QuizProvider>
-        <TestComponent />
-      </QuizProvider>
-    );
+    const { result } = renderHook(() => useQuizContext(), {
+      wrapper: QuizProvider,
+    });
 
     // Set game config and submit answer
     act(() => {
-      getByTestId("set-config").click();
-      getByTestId("submit-answer").click();
+      result.current.dispatch({
+        type: "SET_GAME_CONFIG",
+        payload: { category: "general", difficulty: "easy" },
+      });
+      result.current.dispatch({
+        type: "SELECT_OPTION",
+        payload: "A",
+      });
+      result.current.dispatch({
+        type: "SUBMIT_ANSWER",
+      });
     });
 
     // Reset quiz
     act(() => {
-      getByTestId("reset-quiz").click();
+      result.current.dispatch({
+        type: "RESET_QUIZ",
+      });
     });
 
-    expect(getByTestId("score").textContent).toBe("0");
-    expect(getByTestId("current-index").textContent).toBe("0");
-    expect(getByTestId("game-config").textContent).toBe("not-configured");
+    expect(result.current.state.score).toBe(0);
+    expect(result.current.state.currentQuestionIndex).toBe(0);
+    expect(result.current.state.gameConfig).toBeNull();
   });
 }); 

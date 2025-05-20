@@ -57,7 +57,7 @@ export default function Leaderboard({ highlightId }: LeaderboardProps) {
                       )}
                     </div>
                   </td>
-                  <td className="py-3 px-4 font-medium">{entry.playerName}</td>
+                  <td className="py-3 px-4 font-medium text-gray-700">{entry.playerName}</td>
                   <td className="py-3 px-4">
                     <span className="font-semibold text-indigo-600">{entry.score}</span>
                   </td>
