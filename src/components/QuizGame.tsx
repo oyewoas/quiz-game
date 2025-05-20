@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useQuizContext } from "../context/QuizContext";
-import { questions } from "../data/questions";
 
 export default function QuizGame() {
   const { state, dispatch, currentQuestion } = useQuizContext();
@@ -31,12 +30,12 @@ export default function QuizGame() {
           
           <div className="text-center mb-8">
             <p className="text-2xl font-semibold text-gray-800 mb-2">
-              Your Score: {state.score} out of {questions.length}
+              Your Score: {state.score} out of {state.filteredQuestions.length}
             </p>
             <p className="text-gray-600">
-              {state.score === questions.length
+              {state.score === state.filteredQuestions.length
                 ? "Perfect score! Amazing job! 🎉"
-                : state.score >= questions.length * 0.7
+                : state.score >= state.filteredQuestions.length * 0.7
                 ? "Great job! Well done! 👏"
                 : "Keep practicing! You'll get better! 💪"}
             </p>
@@ -61,12 +60,13 @@ export default function QuizGame() {
     );
   }
 
-  if (!currentQuestion) {
+  // Only show loading state during initial load
+  if (!currentQuestion && state.currentQuestionIndex === 0) {
     return (
       <div className="w-full max-w-4xl mx-auto p-6">
         <div className="bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading next question...</p>
+          <p className="mt-4 text-gray-600">Loading quiz...</p>
         </div>
       </div>
     );
@@ -88,7 +88,7 @@ export default function QuizGame() {
     dispatch({ type: "SAVE_SCORE" });
   };
 
-  const progress = ((state.currentQuestionIndex) / questions.length) * 100;
+  const progress = ((state.currentQuestionIndex) / state.filteredQuestions.length) * 100;
 
   return (
     <div className="w-full max-w-4xl mx-auto p-6">
@@ -96,7 +96,7 @@ export default function QuizGame() {
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <span>Question {state.currentQuestionIndex + 1} of {questions.length}</span>
+            <span>Question {state.currentQuestionIndex + 1} of {state.filteredQuestions.length}</span>
             <span>Score: {state.score}</span>
           </div>
           <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -119,10 +119,10 @@ export default function QuizGame() {
         {/* Question */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            {currentQuestion.question}
+            {currentQuestion?.question}
           </h2>
           <div className="grid gap-4">
-            {currentQuestion.options.map((option) => (
+            {currentQuestion?.options.map((option) => (
               <button
                 key={option}
                 onClick={() => handleOptionClick(option)}
@@ -144,7 +144,7 @@ export default function QuizGame() {
         </div>
 
         {/* Feedback */}
-        {state.showFeedback && state.selectedOption && (
+        {state.showFeedback && state.selectedOption && currentQuestion && (
           <div className={`p-4 rounded-lg mb-8 ${
             state.selectedOption === currentQuestion.correctAnswer
               ? "bg-green-50 text-green-700"
@@ -162,7 +162,7 @@ export default function QuizGame() {
             <div className="bg-white rounded-lg p-8 max-w-md w-full">
               <h3 className="text-2xl font-bold text-gray-800 mb-4">Quiz Complete!</h3>
               <p className="text-gray-600 mb-6">
-                Your score: {state.score} out of {questions.length}
+                Your score: {state.score} out of {state.filteredQuestions.length}
               </p>
               <form onSubmit={handleNameSubmit} className="space-y-4">
                 <div>

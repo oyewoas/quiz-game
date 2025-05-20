@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { Question, QuizConfig, LeaderboardEntry } from '../types/quiz';
-import { questions } from '../data/questions';
+import { getQuestions } from '../data/questions';
 import { addLeaderboardEntry, getLeaderboard } from '../utils/leaderboard';
 
 interface QuizState {
   gameConfig: QuizConfig | null;
   currentQuestionIndex: number;
   currentQuestion: Question | null;
+  filteredQuestions: Question[];
   score: number;
   answers: Array<{
     questionId: string;
@@ -40,6 +41,7 @@ const initialState: QuizState = {
   gameConfig: null,
   currentQuestionIndex: 0,
   currentQuestion: null,
+  filteredQuestions: [],
   score: 0,
   answers: [],
   isComplete: false,
@@ -75,13 +77,26 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         if (!validateGameConfig(action.payload)) {
           throw new Error('Invalid game configuration');
         }
-        const firstQuestion = questions[0];
+        
+        // Get questions for the selected category and difficulty
+        const filteredQuestions = getQuestions(
+          action.payload.category as string,
+          action.payload.difficulty as string
+        );
+
+        if (filteredQuestions.length === 0) {
+          throw new Error('No questions found for the selected category and difficulty');
+        }
+
+        const firstQuestion = filteredQuestions[0];
         if (!validateQuestion(firstQuestion)) {
           throw new Error('Invalid question data');
         }
+
         return {
           ...state,
           gameConfig: action.payload,
+          filteredQuestions,
           currentQuestion: firstQuestion,
           currentQuestionIndex: 0,
           timeRemaining: firstQuestion.timeLimit || 30,
@@ -108,7 +123,11 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         };
 
       case 'SUBMIT_ANSWER':
-        const currentQuestion = questions[state.currentQuestionIndex];
+        if (!state.gameConfig || !state.filteredQuestions.length) {
+          throw new Error('No game configuration or questions available');
+        }
+
+        const currentQuestion = state.filteredQuestions[state.currentQuestionIndex];
         if (!validateQuestion(currentQuestion)) {
           throw new Error('Invalid question data');
         }
@@ -119,9 +138,9 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         const isCorrect = state.selectedOption === currentQuestion.correctAnswer;
         const timeSpent = (currentQuestion.timeLimit || 30) - state.timeRemaining;
         const nextQuestionIndex = state.currentQuestionIndex + 1;
-        const nextQuestion = questions[nextQuestionIndex];
+        const nextQuestion = state.filteredQuestions[nextQuestionIndex];
 
-        const isLastQuestion = nextQuestionIndex >= questions.length;
+        const isLastQuestion = nextQuestionIndex >= state.filteredQuestions.length;
 
         return {
           ...state,
@@ -206,7 +225,6 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
     }
   } catch (error) {
     console.error('Quiz state error:', error);
-    // Return a safe state that allows the user to continue or restart
     return {
       ...state,
       showFeedback: false,
@@ -225,7 +243,7 @@ const QuizContext = createContext<QuizContextType | undefined>(undefined);
 
 export function QuizProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(quizReducer, initialState);
-  const currentQuestion = questions[state.currentQuestionIndex];
+  const currentQuestion = state.filteredQuestions[state.currentQuestionIndex];
 
   return (
     <QuizContext.Provider value={{ state, dispatch, currentQuestion }}>
