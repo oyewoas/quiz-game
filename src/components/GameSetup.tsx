@@ -21,6 +21,7 @@ export default function GameSetup() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<QuizConfig["difficulty"]>("easy");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Hide the setup when game is started
   if (state.gameConfig) {
     return null;
   }
@@ -81,7 +82,7 @@ export default function GameSetup() {
                 <button
                   key={difficulty.id}
                   type="button"
-                  onClick={() => setSelectedDifficulty(difficulty.id as "easy" | "medium" | "hard")}
+                  onClick={() => setSelectedDifficulty(difficulty.id as QuizConfig["difficulty"])}
                   className={`p-4 rounded-lg border-2 transition-all ${
                     selectedDifficulty === difficulty.id
                       ? "border-indigo-600 bg-indigo-50 text-indigo-700"

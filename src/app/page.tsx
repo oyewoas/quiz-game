@@ -2,6 +2,7 @@
 
 import React, { Suspense } from "react";
 import GameSetup from "../components/GameSetup";
+import QuizGame from "../components/QuizGame";
 import { QuizProvider } from "../context/QuizContext";
 import ErrorBoundary from "../components/ErrorBoundary";
 
@@ -19,6 +20,7 @@ export default function Home() {
         }>
           <div className="min-h-screen bg-gray-50 flex items-center justify-center">
             <GameSetup />
+            <QuizGame />
           </div>
         </Suspense>
       </QuizProvider>
