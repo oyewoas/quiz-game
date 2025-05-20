@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuizContext } from "../context/QuizContext";
+import { QuizConfig } from "../types/quiz";
 
 const categories = [
   { id: "general", name: "General Knowledge" },
@@ -17,7 +18,7 @@ const difficulties = [
 export default function GameSetup() {
   const { state, dispatch } = useQuizContext();
   const [selectedCategory, setSelectedCategory] = useState(categories[0].id);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<"easy" | "medium" | "hard">("easy");
+  const [selectedDifficulty, setSelectedDifficulty] = useState<QuizConfig["difficulty"]>("easy");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (state.gameConfig) {
@@ -35,7 +36,7 @@ export default function GameSetup() {
         payload: {
           category: selectedCategory,
           difficulty: selectedDifficulty,
-        },
+        } as QuizConfig,
       });
       setIsSubmitting(false);
     }, 300);

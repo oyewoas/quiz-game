@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { GameConfig } from '../components/GameSetup';
-import { Question } from '../types/quiz';
+import { Question, QuizConfig, LeaderboardEntry } from '../types/quiz';
 import { questions } from '../data/questions';
 import { addLeaderboardEntry, getLeaderboard } from '../utils/leaderboard';
 
 interface QuizState {
-  gameConfig: GameConfig | null;
+  gameConfig: QuizConfig | null;
   currentQuestionIndex: number;
+  currentQuestion: Question | null;
   score: number;
   answers: Array<{
     questionId: string;
@@ -20,19 +20,12 @@ interface QuizState {
   showFeedback: boolean;
   playerName: string;
   showNamePrompt: boolean;
-  latestEntryId: string | undefined;
-  leaderboard: Array<{
-    id: string;
-    playerName: string;
-    score: number;
-    date: string;
-    category: string;
-    difficulty: string;
-  }>;
+  latestEntryId: string | null;
+  leaderboard: LeaderboardEntry[];
 }
 
 type QuizAction =
-  | { type: 'SET_GAME_CONFIG'; payload: GameConfig }
+  | { type: 'SET_GAME_CONFIG'; payload: QuizConfig }
   | { type: 'SELECT_OPTION'; payload: string }
   | { type: 'SHOW_FEEDBACK' }
   | { type: 'SUBMIT_ANSWER' }
@@ -46,6 +39,7 @@ type QuizAction =
 const initialState: QuizState = {
   gameConfig: null,
   currentQuestionIndex: 0,
+  currentQuestion: null,
   score: 0,
   answers: [],
   isComplete: false,
@@ -54,12 +48,12 @@ const initialState: QuizState = {
   showFeedback: false,
   playerName: '',
   showNamePrompt: false,
-  latestEntryId: undefined,
+  latestEntryId: null,
   leaderboard: getLeaderboard(),
 };
 
 // Add validation functions
-const validateGameConfig = (config: GameConfig): boolean => {
+const validateGameConfig = (config: QuizConfig): boolean => {
   if (!config) return false;
   if (!config.category || !config.difficulty) return false;
   if (!['easy', 'medium', 'hard'].includes(config.difficulty)) return false;
@@ -155,13 +149,13 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
           throw new Error('Invalid player name or game configuration');
         }
 
-        const entry = {
+        const entry: LeaderboardEntry = {
           id: Date.now().toString(),
           playerName: state.playerName.trim(),
           score: state.score,
           date: new Date().toISOString(),
-          category: state.gameConfig.category,
-          difficulty: state.gameConfig.difficulty,
+          category: state.gameConfig.category || 'general',
+          difficulty: state.gameConfig.difficulty || 'medium',
         };
 
         try {
