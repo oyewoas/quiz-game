@@ -3,103 +3,120 @@ import { useQuizContext } from "../context/QuizContext";
 import { QuizConfig } from "../types/quiz";
 
 const categories = [
-  { id: "blockchain", name: "Blockchain Basics" },
-  { id: "web3", name: "Web3 & dApps" },
-  { id: "defi", name: "DeFi" },
-  { id: "nft", name: "NFTs" },
-  { id: "cryptocurrency", name: "Cryptocurrency" },
+  { id: "general", name: "General Knowledge" },
+  { id: "science", name: "Science" },
+  { id: "history", name: "History" },
+  { id: "technology", name: "Technology" },
 ];
 
 const difficulties = [
-  { id: "easy", name: "Easy" },
-  { id: "medium", name: "Medium" },
-  { id: "hard", name: "Hard" },
+  { id: "easy", name: "Easy", timeLimit: 30 },
+  { id: "medium", name: "Medium", timeLimit: 20 },
+  { id: "hard", name: "Hard", timeLimit: 15 },
 ];
 
 export default function GameSetup() {
   const { state, dispatch } = useQuizContext();
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedDifficulty, setSelectedDifficulty] = useState<QuizConfig["difficulty"]>("medium");
+  const [selectedCategory, setSelectedCategory] = useState(categories[0].id);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<QuizConfig["difficulty"]>("easy");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Don't show setup if game is already configured
+  // Hide the setup when game is started
   if (state.gameConfig) {
     return null;
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCategory) return;
-
     setIsSubmitting(true);
     
     // Add a small delay for better UX
     setTimeout(() => {
-      const config: QuizConfig = {
-        category: selectedCategory,
-        difficulty: selectedDifficulty,
-        timePerQuestion: 30, // 30 seconds per question
-      };
-      
-      dispatch({ type: "SET_GAME_CONFIG", payload: config });
+      dispatch({
+        type: "SET_GAME_CONFIG",
+        payload: {
+          category: selectedCategory,
+          difficulty: selectedDifficulty,
+        } as QuizConfig,
+      });
       setIsSubmitting(false);
     }, 300);
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Game Setup</h2>
+    <div className="w-full max-w-2xl mx-auto p-6">
+      <div className="bg-white rounded-lg shadow-lg p-8 transform transition-all hover:scale-[1.02]">
+        <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          Quiz Game Setup
+        </h1>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-lg font-medium text-gray-700 mb-4">
               Select Category
             </label>
-            <select
-              id="category"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              required
-            >
-              <option value="">Choose a category</option>
+            <div className="grid grid-cols-2 gap-4">
               {categories.map((category) => (
-                <option key={category.id} value={category.id}>
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    selectedCategory === category.id
+                      ? "border-indigo-600 bg-indigo-50 text-indigo-700"
+                      : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
+                  }`}
+                >
                   {category.name}
-                </option>
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
           <div>
-            <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-lg font-medium text-gray-700 mb-4">
               Select Difficulty
             </label>
-            <select
-              id="difficulty"
-              value={selectedDifficulty}
-              onChange={(e) => setSelectedDifficulty(e.target.value as QuizConfig["difficulty"])}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
+            <div className="grid grid-cols-3 gap-4">
               {difficulties.map((difficulty) => (
-                <option key={difficulty.id} value={difficulty.id}>
-                  {difficulty.name}
-                </option>
+                <button
+                  key={difficulty.id}
+                  type="button"
+                  onClick={() => setSelectedDifficulty(difficulty.id as QuizConfig["difficulty"])}
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    selectedDifficulty === difficulty.id
+                      ? "border-indigo-600 bg-indigo-50 text-indigo-700"
+                      : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
+                  }`}
+                >
+                  <div className="font-medium">{difficulty.name}</div>
+                  <div className="text-sm text-gray-500">
+                    {difficulty.timeLimit}s per question
+                  </div>
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
           <button
             type="submit"
-            disabled={!selectedCategory || isSubmitting}
-            className={`w-full py-3 px-4 rounded-lg text-white font-medium transition-colors ${
-              !selectedCategory || isSubmitting
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-700"
-            }`}
+            disabled={isSubmitting}
+            className={`w-full py-4 px-6 rounded-lg text-white font-medium text-lg
+              ${
+                isSubmitting
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-indigo-600 hover:bg-indigo-700 transform hover:scale-[1.02]"
+              }
+              transition-all duration-300 shadow-md`}
           >
-            {isSubmitting ? "Starting Quiz..." : "Start Quiz"}
+            {isSubmitting ? (
+              <div className="flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Starting Game...
+              </div>
+            ) : (
+              "Start Quiz"
+            )}
           </button>
         </form>
       </div>
