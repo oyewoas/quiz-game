@@ -17,8 +17,59 @@ export default function QuizGame() {
     return () => clearInterval(timer);
   }, [state.gameConfig, dispatch]);
 
-  if (!state.gameConfig || !currentQuestion) {
+  if (!state.gameConfig) {
     return null;
+  }
+
+  if (state.isComplete && !state.showNamePrompt && !state.latestEntryId) {
+    return (
+      <div className="w-full max-w-4xl mx-auto p-6">
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Quiz Complete!
+          </h2>
+          
+          <div className="text-center mb-8">
+            <p className="text-2xl font-semibold text-gray-800 mb-2">
+              Your Score: {state.score} out of {questions.length}
+            </p>
+            <p className="text-gray-600">
+              {state.score === questions.length
+                ? "Perfect score! Amazing job! 🎉"
+                : state.score >= questions.length * 0.7
+                ? "Great job! Well done! 👏"
+                : "Keep practicing! You'll get better! 💪"}
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <button
+              onClick={() => dispatch({ type: "SHOW_NAME_PROMPT" })}
+              className="w-full py-4 px-6 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Save Score to Leaderboard
+            </button>
+            <button
+              onClick={() => dispatch({ type: "RESET_QUIZ" })}
+              className="w-full py-4 px-6 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Play Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentQuestion) {
+    return (
+      <div className="w-full max-w-4xl mx-auto p-6">
+        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading next question...</p>
+        </div>
+      </div>
+    );
   }
 
   const handleOptionClick = (option: string) => {

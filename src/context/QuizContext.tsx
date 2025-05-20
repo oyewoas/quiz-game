@@ -121,6 +121,8 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         const nextQuestionIndex = state.currentQuestionIndex + 1;
         const nextQuestion = questions[nextQuestionIndex];
 
+        const isLastQuestion = nextQuestionIndex >= questions.length;
+
         return {
           ...state,
           score: isCorrect ? state.score + 1 : state.score,
@@ -136,7 +138,8 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
           currentQuestionIndex: nextQuestionIndex,
           currentQuestion: nextQuestion || null,
           timeRemaining: nextQuestion?.timeLimit || 30,
-          isComplete: nextQuestionIndex >= questions.length,
+          isComplete: isLastQuestion,
+          showNamePrompt: isLastQuestion,
         };
 
       case 'RESET_QUESTION':
@@ -189,8 +192,6 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
       case 'RESET_QUIZ':
         return {
           ...initialState,
-          gameConfig: state.gameConfig,
-          timeRemaining: questions[0]?.timeLimit || 30,
           leaderboard: state.leaderboard,
         };
 
