@@ -1,11 +1,6 @@
 import React, { useState } from "react";
 import { useQuizContext } from "../context/QuizContext";
-import { theme } from "../styles/theme";
 
-interface GameConfig {
-  category: string;
-  difficulty: "easy" | "medium" | "hard";
-}
 
 const categories = [
   { id: "general", name: "General Knowledge" },
