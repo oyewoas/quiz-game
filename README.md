@@ -64,7 +64,8 @@ yarn dev
 4. **Save Your Score**: 
    - After completing the quiz, enter your name to save your score
    - View your position on the leaderboard
-5. **Play Again**: Click "Restart Quiz" to try again and improve your score
+5. **Play Again**: Click "Play Again" to try again and improve your score
+6. **View Leaders Board**: Check leaders board table
 
 ## 🛠️ Technical Details
 
@@ -81,7 +82,7 @@ yarn dev
 src/
 ├── app/              # Next.js app router pages
 ├── components/       # React components
-├── hooks/           # Custom React hooks
+├── context/          # Custom React contexts
 ├── types/           # TypeScript type definitions
 ├── utils/           # Utility functions
 └── data/            # Static data (questions)
