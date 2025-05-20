@@ -2,121 +2,161 @@
 
 import React, { useEffect } from "react";
 import { useQuizContext } from "../context/QuizContext";
-import Leaderboard from "./Leaderboard";
+import { questions } from "../data/questions";
 
-const QuizGame: React.FC = () => {
+export default function QuizGame() {
   const { state, dispatch, currentQuestion } = useQuizContext();
 
   useEffect(() => {
-    if (!state.isComplete && state.timeRemaining > 0) {
-      const timer = setInterval(() => {
-        dispatch({ type: 'UPDATE_TIMER' });
-      }, 1000);
+    if (!state.gameConfig) return;
 
-      return () => clearInterval(timer);
-    } else if (state.timeRemaining === 0 && !state.isComplete) {
-      dispatch({ type: 'SUBMIT_ANSWER' });
-    }
-  }, [state.timeRemaining, state.isComplete, dispatch]);
+    const timer = setInterval(() => {
+      dispatch({ type: "UPDATE_TIMER" });
+    }, 1000);
 
-  useEffect(() => {
-    dispatch({ type: 'RESET_QUESTION' });
-  }, [state.currentQuestionIndex, dispatch]);
+    return () => clearInterval(timer);
+  }, [state.gameConfig, dispatch]);
 
-  if (!currentQuestion && !state.isComplete) {
-    return <div className="text-center mt-10">Loading question...</div>;
+  if (!state.gameConfig || !currentQuestion) {
+    return null;
   }
 
   const handleOptionClick = (option: string) => {
-    if (state.selectedOption || state.showFeedback) return;
-    dispatch({ type: 'SELECT_OPTION', payload: option });
-    dispatch({ type: 'SHOW_FEEDBACK' });
+    if (state.selectedOption) return;
+    dispatch({ type: "SELECT_OPTION", payload: option });
+    dispatch({ type: "SHOW_FEEDBACK" });
+
     setTimeout(() => {
-      dispatch({ type: 'SUBMIT_ANSWER' });
-    }, 1200);
+      dispatch({ type: "SUBMIT_ANSWER" });
+      dispatch({ type: "RESET_QUESTION" });
+    }, 1500);
   };
 
-  const getOptionClass = (option: string) => {
-    if (!state.showFeedback) return "bg-white hover:bg-blue-100";
-    if (option === currentQuestion?.correctAnswer) return "bg-green-200";
-    if (option === state.selectedOption) return "bg-red-200";
-    return "bg-white";
+  const handleNameSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    dispatch({ type: "SAVE_SCORE" });
   };
 
-  const handleSaveScore = () => {
-    dispatch({ type: 'SAVE_SCORE' });
-  };
-
-  if (state.isComplete) {
-    return (
-      <div className="max-w-xl mx-auto mt-10 p-6 bg-white rounded shadow text-center">
-        <h2 className="text-2xl font-bold mb-4">Quiz Complete!</h2>
-        <p className="text-lg mb-2">Your Score: <span className="font-semibold">{state.score} / {state.answers.length}</span></p>
-        {state.showNamePrompt ? (
-          <div className="mt-4">
-            <input
-              type="text"
-              placeholder="Enter your name"
-              value={state.playerName}
-              onChange={(e) => dispatch({ type: 'SET_PLAYER_NAME', payload: e.target.value })}
-              className="border p-2 rounded mr-2"
-            />
-            <button
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              onClick={handleSaveScore}
-            >
-              Save Score
-            </button>
-          </div>
-        ) : (
-          <button
-            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            onClick={() => dispatch({ type: 'SHOW_NAME_PROMPT' })}
-          >
-            Save Score
-          </button>
-        )}
-        <button
-          className="mt-4 ml-4 px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-          onClick={() => dispatch({ type: 'RESET_QUIZ' })}
-        >
-          Restart Quiz
-        </button>
-        <Leaderboard highlightId={state.latestEntryId} />
-      </div>
-    );
-  }
+  const progress = ((state.currentQuestionIndex) / questions.length) * 100;
 
   return (
-    <div className="max-w-xl mx-auto mt-10 p-6 bg-white rounded shadow">
-      <div className="flex justify-between items-center mb-4">
-        <span className="text-gray-600">Question {state.currentQuestionIndex + 1} / {state.answers.length + 1}</span>
-        <span className="font-mono text-lg">⏰ {state.timeRemaining}s</span>
-      </div>
-      <h2 className="text-xl font-semibold mb-6">{currentQuestion?.question}</h2>
-      <div className="grid gap-4">
-        {currentQuestion?.options.map((option) => (
-          <button
-            key={option}
-            className={`w-full py-3 px-4 rounded border text-left transition-colors duration-200 ${getOptionClass(option)}`}
-            disabled={!!state.selectedOption || state.showFeedback}
-            onClick={() => handleOptionClick(option)}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-      {state.showFeedback && state.selectedOption && (
-        <div className="mt-4 text-lg font-semibold">
-          {state.selectedOption === currentQuestion?.correctAnswer ? (
-            <span className="text-green-600">Correct!</span>
-          ) : (
-            <span className="text-red-600">Incorrect. The correct answer is &ldquo;{currentQuestion?.correctAnswer}&rdquo;.</span>
-          )}
+    <div className="w-full max-w-4xl mx-auto p-6">
+      <div className="bg-white rounded-lg shadow-lg p-8">
+        {/* Progress Bar */}
+        <div className="mb-8">
+          <div className="flex justify-between text-sm text-gray-600 mb-2">
+            <span>Question {state.currentQuestionIndex + 1} of {questions.length}</span>
+            <span>Score: {state.score}</span>
+          </div>
+          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-indigo-600 transition-all duration-300 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
-      )}
+
+        {/* Timer */}
+        <div className="mb-8 text-center">
+          <div className={`text-2xl font-bold ${
+            state.timeRemaining <= 5 ? 'text-red-600 animate-pulse' : 'text-gray-700'
+          }`}>
+            {state.timeRemaining}s
+          </div>
+        </div>
+
+        {/* Question */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            {currentQuestion.question}
+          </h2>
+          <div className="grid gap-4">
+            {currentQuestion.options.map((option) => (
+              <button
+                key={option}
+                onClick={() => handleOptionClick(option)}
+                disabled={state.selectedOption !== null}
+                className={`p-4 rounded-lg border-2 text-left transition-all ${
+                  state.selectedOption === option
+                    ? option === currentQuestion.correctAnswer
+                      ? "border-green-500 bg-green-50 text-green-700"
+                      : "border-red-500 bg-red-50 text-red-700"
+                    : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
+                } ${
+                  state.selectedOption ? "cursor-default" : "cursor-pointer"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Feedback */}
+        {state.showFeedback && state.selectedOption && (
+          <div className={`p-4 rounded-lg mb-8 ${
+            state.selectedOption === currentQuestion.correctAnswer
+              ? "bg-green-50 text-green-700"
+              : "bg-red-50 text-red-700"
+          }`}>
+            {state.selectedOption === currentQuestion.correctAnswer
+              ? "Correct! Well done!"
+              : `Incorrect. The correct answer is: ${currentQuestion.correctAnswer}`}
+          </div>
+        )}
+
+        {/* Name Prompt */}
+        {state.isComplete && state.showNamePrompt && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg p-8 max-w-md w-full">
+              <h3 className="text-2xl font-bold text-gray-800 mb-4">Quiz Complete!</h3>
+              <p className="text-gray-600 mb-6">
+                Your score: {state.score} out of {questions.length}
+              </p>
+              <form onSubmit={handleNameSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="playerName" className="block text-sm font-medium text-gray-700 mb-2">
+                    Enter your name to save your score
+                  </label>
+                  <input
+                    type="text"
+                    id="playerName"
+                    value={state.playerName}
+                    onChange={(e) => dispatch({ type: "SET_PLAYER_NAME", payload: e.target.value })}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Your name"
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-3 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Save Score
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Leaderboard Entry */}
+        {state.latestEntryId && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg p-8 max-w-md w-full">
+              <h3 className="text-2xl font-bold text-gray-800 mb-4">Score Saved!</h3>
+              <p className="text-gray-600 mb-6">
+                Your score has been added to the leaderboard.
+              </p>
+              <button
+                onClick={() => dispatch({ type: "RESET_QUIZ" })}
+                className="w-full py-3 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                Play Again
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
-};
-
-export default QuizGame; 
+} 
