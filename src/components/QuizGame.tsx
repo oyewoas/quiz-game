@@ -5,8 +5,13 @@ import { questions } from "../data/questions";
 import { useQuiz } from "../hooks/useQuiz";
 import { addLeaderboardEntry } from "../utils/leaderboard";
 import Leaderboard from "./Leaderboard";
+import { GameConfig } from "./GameSetup";
 
-const QuizGame: React.FC = () => {
+interface QuizGameProps {
+  config: GameConfig;
+}
+
+const QuizGame: React.FC<QuizGameProps> = ({ config }) => {
   const { quizState, currentQuestion, submitAnswer, resetQuiz } = useQuiz(questions);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -47,8 +52,8 @@ const QuizGame: React.FC = () => {
       playerName: playerName.trim(),
       score: quizState.score,
       date: new Date().toISOString(),
-      category: "General",
-      difficulty: "medium"
+      category: config.category,
+      difficulty: config.difficulty
     };
     addLeaderboardEntry(entry);
     setLatestEntryId(entry.id);
