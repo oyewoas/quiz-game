@@ -4,6 +4,25 @@ import { useEffect } from "react";
 import { useQuizContext } from "../context/QuizContext";
 import { questions } from "../data/questions";
 
+interface ModalProps {
+  isOpen: boolean;
+  title: string;
+  children: React.ReactNode;
+}
+
+function Modal({ isOpen, title, children }: ModalProps) {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg p-8 max-w-md w-full">
+        <h3 className="text-2xl font-bold text-gray-800 mb-4">{title}</h3>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function QuizGame() {
   const { state, dispatch, currentQuestion } = useQuizContext();
 
@@ -21,6 +40,25 @@ export default function QuizGame() {
     return null;
   }
 
+  const handleOptionClick = (option: string) => {
+    if (state.selectedOption) return;
+    dispatch({ type: "SELECT_OPTION", payload: option });
+    dispatch({ type: "SHOW_FEEDBACK" });
+
+    setTimeout(() => {
+      dispatch({ type: "SUBMIT_ANSWER" });
+      dispatch({ type: "RESET_QUESTION" });
+    }, 1500);
+  };
+
+  const handleNameSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    dispatch({ type: "SAVE_SCORE" });
+  };
+
+  const progress = ((state.currentQuestionIndex) / questions.length) * 100;
+
+  // Show completion UI when quiz is complete and not showing name prompt
   if (state.isComplete && !state.showNamePrompt && !state.latestEntryId) {
     return (
       <div className="w-full max-w-4xl mx-auto p-6">
@@ -61,35 +99,6 @@ export default function QuizGame() {
     );
   }
 
-  if (!currentQuestion) {
-    return (
-      <div className="w-full max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading next question...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const handleOptionClick = (option: string) => {
-    if (state.selectedOption) return;
-    dispatch({ type: "SELECT_OPTION", payload: option });
-    dispatch({ type: "SHOW_FEEDBACK" });
-
-    setTimeout(() => {
-      dispatch({ type: "SUBMIT_ANSWER" });
-      dispatch({ type: "RESET_QUESTION" });
-    }, 1500);
-  };
-
-  const handleNameSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    dispatch({ type: "SAVE_SCORE" });
-  };
-
-  const progress = ((state.currentQuestionIndex) / questions.length) * 100;
-
   return (
     <div className="w-full max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg p-8">
@@ -118,95 +127,100 @@ export default function QuizGame() {
 
         {/* Question */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            {currentQuestion.question}
-          </h2>
-          <div className="grid gap-4">
-            {currentQuestion.options.map((option) => (
-              <button
-                key={option}
-                onClick={() => handleOptionClick(option)}
-                disabled={state.selectedOption !== null}
-                className={`p-4 rounded-lg border-2 text-left transition-all ${
-                  state.selectedOption === option
-                    ? option === currentQuestion.correctAnswer
-                      ? "border-green-500 bg-green-50 text-green-700"
-                      : "border-red-500 bg-red-50 text-red-700"
-                    : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
-                } ${
-                  state.selectedOption ? "cursor-default" : "cursor-pointer"
-                }`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
+          {state.showFeedback ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Preparing next question...</p>
+            </div>
+          ) : (
+            <>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                {currentQuestion?.question}
+              </h2>
+              <div className="grid gap-4">
+                {currentQuestion?.options.map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => handleOptionClick(option)}
+                    disabled={state.selectedOption !== null}
+                    className={`p-4 rounded-lg border-2 text-left transition-all ${
+                      state.selectedOption === option
+                        ? option === currentQuestion.correctAnswer
+                          ? "border-green-500 bg-green-50 text-green-700"
+                          : "border-red-500 bg-red-50 text-red-700"
+                        : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
+                    } ${
+                      state.selectedOption ? "cursor-default" : "cursor-pointer"
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Feedback */}
         {state.showFeedback && state.selectedOption && (
           <div className={`p-4 rounded-lg mb-8 ${
-            state.selectedOption === currentQuestion.correctAnswer
+            state.selectedOption === currentQuestion?.correctAnswer
               ? "bg-green-50 text-green-700"
               : "bg-red-50 text-red-700"
           }`}>
-            {state.selectedOption === currentQuestion.correctAnswer
+            {state.selectedOption === currentQuestion?.correctAnswer
               ? "Correct! Well done!"
-              : `Incorrect. The correct answer is: ${currentQuestion.correctAnswer}`}
+              : `Incorrect. The correct answer is: ${currentQuestion?.correctAnswer}`}
           </div>
         )}
 
-        {/* Name Prompt */}
-        {state.isComplete && state.showNamePrompt && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg p-8 max-w-md w-full">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">Quiz Complete!</h3>
-              <p className="text-gray-600 mb-6">
-                Your score: {state.score} out of {questions.length}
-              </p>
-              <form onSubmit={handleNameSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="playerName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Enter your name to save your score
-                  </label>
-                  <input
-                    type="text"
-                    id="playerName"
-                    value={state.playerName}
-                    onChange={(e) => dispatch({ type: "SET_PLAYER_NAME", payload: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Your name"
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full py-3 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                >
-                  Save Score
-                </button>
-              </form>
+        {/* Name Prompt Modal */}
+        <Modal
+          isOpen={state.isComplete && state.showNamePrompt}
+          title="Quiz Complete!"
+        >
+          <p className="text-gray-600 mb-6">
+            Your score: {state.score} out of {questions.length}
+          </p>
+          <form onSubmit={handleNameSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="playerName" className="block text-sm font-medium text-gray-700 mb-2">
+                Enter your name to save your score
+              </label>
+              <input
+                type="text"
+                id="playerName"
+                value={state.playerName}
+                onChange={(e) => dispatch({ type: "SET_PLAYER_NAME", payload: e.target.value })}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Your name"
+                required
+              />
             </div>
-          </div>
-        )}
+            <button
+              type="submit"
+              className="w-full py-3 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Save Score
+            </button>
+          </form>
+        </Modal>
 
-        {/* Leaderboard Entry */}
-        {state.latestEntryId && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg p-8 max-w-md w-full">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">Score Saved!</h3>
-              <p className="text-gray-600 mb-6">
-                Your score has been added to the leaderboard.
-              </p>
-              <button
-                onClick={() => dispatch({ type: "RESET_QUIZ" })}
-                className="w-full py-3 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                Play Again
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Score Saved Modal */}
+        <Modal
+          isOpen={!!state.latestEntryId}
+          title="Score Saved!"
+        >
+          <p className="text-gray-600 mb-6">
+            Your score has been added to the leaderboard.
+          </p>
+          <button
+            onClick={() => dispatch({ type: "RESET_QUIZ" })}
+            className="w-full py-3 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Play Again
+          </button>
+        </Modal>
       </div>
     </div>
   );
