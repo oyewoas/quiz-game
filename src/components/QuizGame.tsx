@@ -132,7 +132,7 @@ export default function QuizGame() {
                     ? option === currentQuestion.correctAnswer
                       ? "border-green-500 bg-green-50 text-green-700"
                       : "border-red-500 bg-red-50 text-red-700"
-                    : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
+                    : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50 text-gray-700"
                 } ${
                   state.selectedOption ? "cursor-default" : "cursor-pointer"
                 }`}
