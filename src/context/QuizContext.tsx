@@ -75,10 +75,21 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         if (!validateGameConfig(action.payload)) {
           throw new Error('Invalid game configuration');
         }
+        const firstQuestion = questions[0];
+        if (!validateQuestion(firstQuestion)) {
+          throw new Error('Invalid question data');
+        }
         return {
           ...state,
           gameConfig: action.payload,
-          timeRemaining: questions[0]?.timeLimit || 30,
+          currentQuestion: firstQuestion,
+          currentQuestionIndex: 0,
+          timeRemaining: firstQuestion.timeLimit || 30,
+          score: 0,
+          answers: [],
+          isComplete: false,
+          selectedOption: null,
+          showFeedback: false,
         };
 
       case 'SELECT_OPTION':
@@ -107,6 +118,8 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
 
         const isCorrect = state.selectedOption === currentQuestion.correctAnswer;
         const timeSpent = (currentQuestion.timeLimit || 30) - state.timeRemaining;
+        const nextQuestionIndex = state.currentQuestionIndex + 1;
+        const nextQuestion = questions[nextQuestionIndex];
 
         return {
           ...state,
@@ -120,9 +133,10 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
               timeSpent,
             },
           ],
-          currentQuestionIndex: state.currentQuestionIndex + 1,
-          timeRemaining: questions[state.currentQuestionIndex + 1]?.timeLimit || 30,
-          isComplete: state.currentQuestionIndex + 1 >= questions.length,
+          currentQuestionIndex: nextQuestionIndex,
+          currentQuestion: nextQuestion || null,
+          timeRemaining: nextQuestion?.timeLimit || 30,
+          isComplete: nextQuestionIndex >= questions.length,
         };
 
       case 'RESET_QUESTION':
