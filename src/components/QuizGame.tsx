@@ -1,11 +1,18 @@
+"use client";
+
 import React, { useState } from "react";
 import { questions } from "../data/questions";
 import { useQuiz } from "../hooks/useQuiz";
+import { addLeaderboardEntry } from "../utils/leaderboard";
+import Leaderboard from "./Leaderboard";
 
 const QuizGame: React.FC = () => {
-  const { quizState, currentQuestion, submitAnswer, resetQuiz, startQuiz } = useQuiz(questions);
+  const { quizState, currentQuestion, submitAnswer, resetQuiz } = useQuiz(questions);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [playerName, setPlayerName] = useState("");
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [latestEntryId, setLatestEntryId] = useState<string | undefined>(undefined);
 
   React.useEffect(() => {
     // Reset selection and feedback when question changes
@@ -33,17 +40,57 @@ const QuizGame: React.FC = () => {
     return "bg-white";
   };
 
+  const handleSaveScore = () => {
+    if (!playerName.trim()) return;
+    const entry = {
+      id: Date.now().toString(),
+      playerName: playerName.trim(),
+      score: quizState.score,
+      date: new Date().toISOString(),
+      category: "General",
+      difficulty: "medium"
+    };
+    addLeaderboardEntry(entry);
+    setLatestEntryId(entry.id);
+    setShowNamePrompt(false);
+  };
+
   if (quizState.isComplete) {
     return (
       <div className="max-w-xl mx-auto mt-10 p-6 bg-white rounded shadow text-center">
         <h2 className="text-2xl font-bold mb-4">Quiz Complete!</h2>
         <p className="text-lg mb-2">Your Score: <span className="font-semibold">{quizState.score} / {questions.length}</span></p>
+        {showNamePrompt ? (
+          <div className="mt-4">
+            <input
+              type="text"
+              placeholder="Enter your name"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              className="border p-2 rounded mr-2"
+            />
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={handleSaveScore}
+            >
+              Save Score
+            </button>
+          </div>
+        ) : (
+          <button
+            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => setShowNamePrompt(true)}
+          >
+            Save Score
+          </button>
+        )}
         <button
-          className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="mt-4 ml-4 px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
           onClick={resetQuiz}
         >
           Restart Quiz
         </button>
+        <Leaderboard highlightId={latestEntryId} />
       </div>
     );
   }
@@ -72,7 +119,7 @@ const QuizGame: React.FC = () => {
           {selectedOption === currentQuestion?.correctAnswer ? (
             <span className="text-green-600">Correct!</span>
           ) : (
-            <span className="text-red-600">Incorrect. The correct answer is "{currentQuestion?.correctAnswer}".</span>
+            <span className="text-red-600">Incorrect. The correct answer is &ldquo;{currentQuestion?.correctAnswer}&rdquo;.</span>
           )}
         </div>
       )}
