@@ -1,23 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import QuizGame from "../components/QuizGame";
-import GameSetup, { GameConfig } from "../components/GameSetup";
+import GameSetup from "../components/GameSetup";
+import { QuizProvider } from "../context/QuizContext";
 
 export default function Home() {
-  const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
-
-  const handleGameStart = (config: GameConfig) => {
-    setGameConfig(config);
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      {gameConfig ? (
-        <QuizGame config={gameConfig} />
-      ) : (
-        <GameSetup onStart={handleGameStart} />
-      )}
-    </div>
+    <QuizProvider>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <GameSetup />
+      </div>
+    </QuizProvider>
   );
 }

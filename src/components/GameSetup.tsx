@@ -1,12 +1,9 @@
 import React from 'react';
+import { useQuizContext } from '../context/QuizContext';
 
 export interface GameConfig {
   category: string;
   difficulty: 'easy' | 'medium' | 'hard';
-}
-
-interface GameSetupProps {
-  onStart: (config: GameConfig) => void;
 }
 
 const categories = [
@@ -22,7 +19,8 @@ const difficulties = [
   { id: 'hard', name: 'Hard' },
 ];
 
-const GameSetup: React.FC<GameSetupProps> = ({ onStart }) => {
+const GameSetup: React.FC = () => {
+  const { state, dispatch } = useQuizContext();
   const [config, setConfig] = React.useState<GameConfig>({
     category: 'general',
     difficulty: 'medium',
@@ -30,8 +28,12 @@ const GameSetup: React.FC<GameSetupProps> = ({ onStart }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onStart(config);
+    dispatch({ type: 'SET_GAME_CONFIG', payload: config });
   };
+
+  if (state.gameConfig) {
+    return null;
+  }
 
   return (
     <div className="max-w-xl mx-auto mt-10 p-6 bg-white rounded shadow">
